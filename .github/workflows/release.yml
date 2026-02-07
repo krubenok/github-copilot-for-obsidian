@@ -1,0 +1,41 @@
+name: Release prerelease
+
+on:
+    push:
+        branches: [main]
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: "latest"
+
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
+
+            - name: Build
+              run: bun run build
+
+            - name: Read manifest version
+              id: manifest
+              run: echo "version=$(node -p \"require('./manifest.json').version\")" >> "$GITHUB_OUTPUT"
+
+            - name: Create prerelease
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: v${{ steps.manifest.outputs.version }}-alpha.${{ github.run_number }}
+                  name: v${{ steps.manifest.outputs.version }}-alpha.${{ github.run_number }}
+                  prerelease: true
+                  files: |
+                      main.js
+                      manifest.json
+                      styles.css

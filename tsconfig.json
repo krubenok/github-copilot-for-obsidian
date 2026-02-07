@@ -14,17 +14,8 @@
 		"noUncheckedIndexedAccess": true,
 		"isolatedModules": true,
 		"allowSyntheticDefaultImports": true,
-		"types": [
-			"bun-types"
-		],
-		"lib": [
-			"DOM",
-			"ES5",
-			"ES6",
-			"ES7"
-		]
+		"types": ["bun-types"],
+		"lib": ["DOM", "ES5", "ES6", "ES7"]
 	},
-	"include": [
-		"src/**/*.ts"
-	]
+	"include": ["src/**/*.ts"]
 }

@@ -1,2 +1,2 @@
-export * from './dom';
-export * from './obsidian';
+export * from "./dom";
+export * from "./obsidian";

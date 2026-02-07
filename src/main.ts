@@ -1,12 +1,12 @@
-import { Notice, Plugin } from 'obsidian';
-import { join } from 'path';
-import { DEFAULT_SETTINGS, VIEW_TYPE_COPILOT_CHAT } from './constants';
-import { registerCommands } from './commands';
-import { CopilotService } from './services/CopilotService';
-import { ContextService } from './services/ContextService';
-import { CopilotSettingTab } from './settings';
-import { ChatView } from './views/ChatView';
-import type { CopilotPluginSettings } from './types';
+import { Notice, Plugin } from "obsidian";
+import { join } from "path";
+import { DEFAULT_SETTINGS, VIEW_TYPE_COPILOT_CHAT } from "./constants";
+import { registerCommands } from "./commands";
+import { CopilotService } from "./services/CopilotService";
+import { ContextService } from "./services/ContextService";
+import { CopilotSettingTab } from "./settings";
+import { ChatView } from "./views/ChatView";
+import type { CopilotPluginSettings } from "./types";
 
 export default class CopilotPlugin extends Plugin {
 	settings!: CopilotPluginSettings;
@@ -18,10 +18,9 @@ export default class CopilotPlugin extends Plugin {
 
 		// Resolve the plugin's filesystem directory for locating node_modules
 		const adapter = this.app.vault.adapter;
-		const vaultBasePath = 'getBasePath' in adapter
-			? (adapter as { getBasePath(): string }).getBasePath()
-			: '';
-		const pluginDir = join(vaultBasePath, this.manifest.dir ?? '');
+		const vaultBasePath =
+			"getBasePath" in adapter ? (adapter as { getBasePath(): string }).getBasePath() : "";
+		const pluginDir = join(vaultBasePath, this.manifest.dir ?? "");
 		this.copilotService = new CopilotService(pluginDir);
 		this.contextService = new ContextService(this.app);
 
@@ -39,7 +38,7 @@ export default class CopilotPlugin extends Plugin {
 		});
 
 		// Ribbon icon to open chat
-		this.addRibbonIcon('message-square', 'Open copilot chat', () => {
+		this.addRibbonIcon("message-square", "Open copilot chat", () => {
 			void this.activateChatView();
 		});
 
@@ -54,10 +53,7 @@ export default class CopilotPlugin extends Plugin {
 			try {
 				await this.copilotService.initialize();
 			} catch (err) {
-				new Notice(
-					`Copilot: ${err instanceof Error ? err.message : String(err)}`,
-					10_000,
-				);
+				new Notice(`Copilot: ${err instanceof Error ? err.message : String(err)}`, 10_000);
 			}
 			// Update any already-open chat views with the initialized service
 			this.refreshChatViews();
@@ -74,7 +70,7 @@ export default class CopilotPlugin extends Plugin {
 		this.settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
-			await this.loadData() as Partial<CopilotPluginSettings>,
+			(await this.loadData()) as Partial<CopilotPluginSettings>,
 		);
 	}
 
