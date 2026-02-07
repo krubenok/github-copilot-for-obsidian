@@ -10,10 +10,11 @@
 
 - Node.js: use current LTS (Node 18+ recommended).
 - **Package manager: bun** (required for this sample - `package.json` defines bun scripts and dependencies).
-- **Bundler: esbuild** (required for this sample - `esbuild.config.mjs` and build scripts depend on it). Alternative bundlers like Rollup or webpack are acceptable for other projects if they bundle all external dependencies into `main.js`.
+- **Bundler: bun build** (required for this sample - `bun build` scripts depend on it). Alternative bundlers like Rollup or webpack are acceptable for other projects if they bundle all external dependencies into `main.js`.
+- **TypeScript compiler: @typescript/native-preview (tsgo)** for type checking.
 - Types: `obsidian` type definitions.
 
-**Note**: This sample project has specific technical dependencies on bun and esbuild. If you're creating a plugin from scratch, you can choose different tools, but you'll need to replace the build configuration accordingly.
+**Note**: This sample project has specific technical dependencies on bun build. If you're creating a plugin from scratch, you can choose different tools, but you'll need to replace the build configuration accordingly.
 
 ### Install
 
@@ -35,10 +36,8 @@ bun run build
 
 ## Linting
 
-- To use eslint install eslint from terminal: `bun install -g eslint`
-- To use eslint to analyze this project use this command: `eslint main.ts`
-- eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder: `eslint ./src/`
+- Use Oxlint for linting: `bun run lint` (type-aware; or `bun run lint:fix` to auto-fix).
+- Use Oxfmt for formatting: `bun run format`.
 
 ## File & folder conventions
 

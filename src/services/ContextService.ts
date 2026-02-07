@@ -35,7 +35,10 @@ export class ContextService {
       const path = this.getActiveFilePath();
       if (path) {
         context.activeFilePath = path;
-        context.activeFileContent = (await this.getActiveFileContent()) ?? undefined;
+        const content = await this.getActiveFileContent();
+        if (content !== null) {
+          context.activeFileContent = content;
+        }
       }
     }
 

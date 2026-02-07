@@ -90,10 +90,8 @@ export class CopilotService {
     await this.destroySession();
 
     try {
-      this.session = await this.client.createSession({
-        model,
-        streaming: true,
-      });
+      const sessionConfig = model ? { model, streaming: true } : { streaming: true };
+      this.session = await this.client.createSession(sessionConfig);
     } catch (error) {
       this.session = null;
       throw new Error(
