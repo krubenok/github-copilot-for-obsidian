@@ -1,0 +1,15 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`ContextService buildContextPrompt formats file context and selection into a prompt 1`] = `
+"Active file: notes/idea.md
+\`\`\`
+File body.
+\`\`\`
+
+Selected text:
+\`\`\`
+Selection text.
+\`\`\`
+
+"
+`;

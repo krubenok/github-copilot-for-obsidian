@@ -1,0 +1,3 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`ChatView renders messages in the chat log 1`] = `"<div class="copilot-chat-message copilot-chat-message-user" data-msg-id="loyw3v284fzyo82mvyr"><div class="copilot-chat-message-content">Hello there</div></div><div class="copilot-chat-message copilot-chat-message-assistant" data-msg-id="loyw3v28nk000qvgimo"><div class="copilot-chat-message-content">Hi from Copilot</div></div>"`;
