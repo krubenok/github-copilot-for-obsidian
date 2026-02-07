@@ -1,99 +1,114 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from "./settings";
+import { Notice, Plugin } from 'obsidian';
+import { join } from 'path';
+import { DEFAULT_SETTINGS, VIEW_TYPE_COPILOT_CHAT } from './constants';
+import { registerCommands } from './commands';
+import { CopilotService } from './services/CopilotService';
+import { ContextService } from './services/ContextService';
+import { CopilotSettingTab } from './settings';
+import { ChatView } from './views/ChatView';
+import type { CopilotPluginSettings } from './types';
 
-// Remember to rename these classes and interfaces!
-
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class CopilotPlugin extends Plugin {
+	settings!: CopilotPluginSettings;
+	private copilotService!: CopilotService;
+	private contextService!: ContextService;
 
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+		// Resolve the plugin's filesystem directory for locating node_modules
+		const adapter = this.app.vault.adapter;
+		const vaultBasePath = 'getBasePath' in adapter
+			? (adapter as { getBasePath(): string }).getBasePath()
+			: '';
+		const pluginDir = join(vaultBasePath, this.manifest.dir ?? '');
+		this.copilotService = new CopilotService(pluginDir);
+		this.contextService = new ContextService(this.app);
+
+		// Register the chat sidebar view
+		this.registerView(VIEW_TYPE_COPILOT_CHAT, (leaf) => {
+			const view = new ChatView(leaf);
+			view.setCopilotService(this.copilotService);
+			view.setContextService(this.contextService);
+			view.setSettings(this.settings);
+			view.setDataHandlers(
+				(data) => this.saveData(data),
+				() => this.loadData(),
+			);
+			return view;
 		});
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
+		// Ribbon icon to open chat
+		this.addRibbonIcon('message-square', 'Open copilot chat', () => {
+			void this.activateChatView();
+		});
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
+		// Register commands
+		registerCommands(this);
+
+		// Settings tab
+		this.addSettingTab(new CopilotSettingTab(this.app, this));
+
+		// Initialize the Copilot client after layout is ready
+		this.app.workspace.onLayoutReady(async () => {
+			try {
+				await this.copilotService.initialize();
+			} catch (err) {
+				new Notice(
+					`Copilot: ${err instanceof Error ? err.message : String(err)}`,
+					10_000,
+				);
 			}
+			// Update any already-open chat views with the initialized service
+			this.refreshChatViews();
 		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				editor.replaceSelection('Sample editor command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			}
-		});
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			new Notice("Click");
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-
 	}
 
 	onunload() {
+		void this.copilotService.destroy().catch(() => {
+			// Best-effort cleanup
+		});
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<MyPluginSettings>);
+		this.settings = Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			await this.loadData() as Partial<CopilotPluginSettings>,
+		);
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-}
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
+	getCopilotService(): CopilotService | null {
+		return this.copilotService;
 	}
 
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText('Woah!');
+	private async activateChatView(): Promise<void> {
+		const { workspace } = this.app;
+		let leaf = workspace.getLeavesOfType(VIEW_TYPE_COPILOT_CHAT)[0];
+
+		if (!leaf) {
+			const rightLeaf = workspace.getRightLeaf(false);
+			if (!rightLeaf) return;
+			leaf = rightLeaf;
+			await leaf.setViewState({ type: VIEW_TYPE_COPILOT_CHAT, active: true });
+		}
+
+		await workspace.revealLeaf(leaf);
 	}
 
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
+	/** Push service references to any open chat view leaves. */
+	private refreshChatViews(): void {
+		for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_COPILOT_CHAT)) {
+			const view = leaf.view;
+			if (view instanceof ChatView) {
+				view.setCopilotService(this.copilotService);
+				view.setContextService(this.contextService);
+				view.setSettings(this.settings);
+			}
+		}
 	}
 }

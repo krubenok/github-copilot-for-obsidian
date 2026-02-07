@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "github-copilot-for-obsidian",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Integrates GitHub Copilot with Obsidian for AI-powered note interaction",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
@@ -24,6 +24,8 @@
 		"jiti": "2.6.1"
 	},
 	"dependencies": {
-		"obsidian": "latest"
+		"@github/copilot-sdk": "^0.1.23",
+		"obsidian": "latest",
+		"zod": "^4.3.6"
 	}
 }
