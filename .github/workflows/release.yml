@@ -27,7 +27,9 @@ jobs:
 
             - name: Read manifest version
               id: manifest
-              run: echo "version=$(node -p \"require('./manifest.json').version\")" >> "$GITHUB_OUTPUT"
+              run: |
+                  VERSION=$(bun -p 'require("./manifest.json").version')
+                  echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
             - name: Create prerelease
               uses: softprops/action-gh-release@v2
