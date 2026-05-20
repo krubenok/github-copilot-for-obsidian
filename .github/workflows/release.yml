@@ -12,12 +12,15 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+              with:
+                  persist-credentials: false
 
             - name: Setup Bun
-              uses: oven-sh/setup-bun@v2
+              uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
               with:
                   bun-version: "latest"
+                  no-cache: true
 
             - name: Install dependencies
               run: bun install --frozen-lockfile
@@ -32,12 +35,14 @@ jobs:
                   echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
             - name: Create prerelease
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: v${{ steps.manifest.outputs.version }}-alpha.${{ github.run_number }}
-                  name: v${{ steps.manifest.outputs.version }}-alpha.${{ github.run_number }}
-                  prerelease: true
-                  files: |
-                      main.js
-                      manifest.json
-                      styles.css
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  RELEASE_TAG: v${{ steps.manifest.outputs.version }}-alpha.${{ github.run_number }}
+              run: |
+                  gh release create "$RELEASE_TAG" \
+                      main.js \
+                      manifest.json \
+                      styles.css \
+                      --repo "$GITHUB_REPOSITORY" \
+                      --title "$RELEASE_TAG" \
+                      --prerelease
